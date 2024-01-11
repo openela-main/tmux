@@ -2,7 +2,7 @@
 
 Name:           tmux
 Version:        2.7
-Release:        1%{?dist}
+Release:        3%{?dist}
 Summary:        A terminal multiplexer
 
 Group:          Applications/System
@@ -13,6 +13,7 @@ URL:            https://tmux.github.io/
 Source0:        https://github.com/tmux/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 # Examples has been removed - so include the bash_completion here
 Source1:        bash_completion_tmux.sh
+Patch1:         0001-Increment-the-lines-counter-when-skipping-a-line-to-.patch
 
 BuildRequires:  gcc
 BuildRequires:  ncurses-devel
@@ -64,6 +65,10 @@ fi
 %{_datadir}/bash-completion/completions/tmux
 
 %changelog
+* Tue Apr 04 2023 Josh Boyer <jwboyer@redhat.com> - 2.7-3
+- Backport fix for intermittent stalling bug
+  Resolves: rhbz 2024339
+
 * Thu Apr 19 2018 Filipe Rosset <rosset.filipe@gmail.com> - 2.7-1
 - update to version 2.7, fixes rhbz #1486507
 - removed upstreamed patches + spec modernization

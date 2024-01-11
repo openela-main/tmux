@@ -1,0 +1,39 @@
+From 66a2bbfc0252bc61b214749e3b56f2cfacc652a7 Mon Sep 17 00:00:00 2001
+From: Nicholas Marriott <nicholas.marriott@gmail.com>
+Date: Tue, 4 Apr 2023 13:24:56 -0400
+Subject: [PATCH] Increment the lines counter when skipping a line to avoid an
+ infinite
+
+loop, and fix a check to avoid a potential out-of-bounds access. Problem
+reported by Yuxiang Qin and tracked down by Karl Beldan; GitHub issue
+1352.
+
+Backport ba31d3a to 2.7
+---
+ grid.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/grid.c b/grid.c
+index e4ba7df4..4db4c693 100644
+--- a/grid.c
++++ b/grid.c
+@@ -1010,7 +1010,7 @@ grid_reflow_join(struct grid *target, struct grid *gd, u_int sx, u_int yy,
+ 		 * If this is now the last line, there is nothing more to be
+ 		 * done.
+ 		 */
+-		if (yy + lines == gd->hsize + gd->sy)
++		if (yy + 1 + lines == gd->hsize + gd->sy)
+ 			break;
+ 		line = yy + 1 + lines;
+ 
+@@ -1020,6 +1020,7 @@ grid_reflow_join(struct grid *target, struct grid *gd, u_int sx, u_int yy,
+ 		if (gd->linedata[line].cellused == 0) {
+ 			if (!wrapped)
+ 				break;
++			lines++;
+ 			continue;
+ 		}
+ 
+-- 
+2.31.1
+
