@@ -2,7 +2,7 @@
 
 Name:           tmux
 Version:        3.2a
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        A terminal multiplexer
 
 # Most of the source is ISC licensed; some of the files in compat/ are 2 and
@@ -12,6 +12,15 @@ URL:            https://tmux.github.io/
 Source0:        https://github.com/tmux/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 # Examples has been removed - so include the bash_completion here
 Source1:        bash_completion_tmux.sh
+Patch1:         0001-Fix-memory-leaks.patch
+Patch2:         0002-Close-file-stream-on-error.patch
+Patch3:         0003-Fix-memory-leak-with-time_format.patch
+Patch4:         0004-Fix-memory-leak-with-condition-on-error-path.patch
+Patch5:         0005-Free-s-even-if-there-is-no-expanded-format.patch
+Patch6:         0006-Fix-spm-memory-leak.patch
+Patch7:         0007-Don-t-leak-the-original-value-memory.patch
+Patch8:         0008-Don-t-leak-expanded.patch
+Patch9:         0009-Fix-buf-memory-leak.patch
 
 BuildRequires:  make
 BuildRequires:  gcc
@@ -32,6 +41,7 @@ as GNU Screen.
 
 %prep
 %setup
+%autopatch
 
 
 %build
@@ -72,6 +82,10 @@ fi
 %{_datadir}/bash-completion/completions/tmux
 
 %changelog
+* Mon Apr 10 2023 Josh Boyer <jwboyer@redhat.com> - 3.2a-5
+- Backport a number of memory leak fixes
+  Resolves: rhbz#1938885
+
 * Fri Dec 03 2021 David Cantrell <dcantrell@redhat.com> - 3.2a-4
 - Rebuild
   Resolves: rhbz#2003007
