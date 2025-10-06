@@ -1,0 +1,13 @@
+--- screen-write.c.orig	2023-12-12 21:17:02.960288969 +0100
++++ screen-write.c	2023-12-12 21:18:07.498869550 +0100
+@@ -2120,6 +2120,10 @@
+ 			return (0);
+ 	}
+ 
++    /* Check if this combined character would be too long. */
++    if (last.data.size + ud->size > sizeof last.data.data)
++        return (0);
++
+ 	/* Combining; flush any pending output. */
+ 	screen_write_collect_flush(ctx, 0, __func__);
+ 

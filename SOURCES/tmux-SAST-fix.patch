@@ -1,0 +1,156 @@
+diff -urNp a/arguments.c b/arguments.c
+--- a/arguments.c	2025-02-07 08:48:27.827337044 +0100
++++ b/arguments.c	2025-02-07 09:05:21.129691985 +0100
+@@ -164,6 +164,7 @@ args_parse_flag_argument(struct args_val
+ 		argument = &values[*i];
+ 		if (argument->type != ARGS_STRING) {
+ 			xasprintf(cause, "-%c argument must be a string", flag);
++            free(new);
+ 			return (-1);
+ 		}
+ 	}
+@@ -171,9 +172,11 @@ args_parse_flag_argument(struct args_val
+ 		if (optional_argument) {
+ 			log_debug("%s: -%c (optional)", __func__, flag);
+ 			args_set(args, flag, NULL, ARGS_ENTRY_OPTIONAL_VALUE);
++            free(new);
+ 			return (0); /* either - or end */
+ 		}
+ 		xasprintf(cause, "-%c expects an argument", flag);
++        free(new);
+ 		return (-1);
+ 	}
+ 	args_copy_value(new, argument);
+diff -urNp a/cmd-capture-pane.c b/cmd-capture-pane.c
+--- a/cmd-capture-pane.c	2025-02-07 08:48:27.827337044 +0100
++++ b/cmd-capture-pane.c	2025-02-07 09:14:07.340469183 +0100
+@@ -249,5 +249,8 @@ cmd_capture_pane_exec(struct cmd *self,
+ 		}
+ 	}
+ 
++    if(buf != NULL)
++        free(buf);
++
+ 	return (CMD_RETURN_NORMAL);
+ }
+diff -urNp a/cmd-command-prompt.c b/cmd-command-prompt.c
+--- a/cmd-command-prompt.c	2025-02-07 08:48:27.827337044 +0100
++++ b/cmd-command-prompt.c	2025-02-07 09:07:00.346134685 +0100
+@@ -143,6 +143,7 @@ cmd_command_prompt_exec(struct cmd *self
+ 		cdata->prompt_type = status_prompt_type(type);
+ 		if (cdata->prompt_type == PROMPT_TYPE_INVALID) {
+ 			cmdq_error(item, "unknown type: %s", type);
++            free(cdata);
+ 			return (CMD_RETURN_ERROR);
+ 		}
+ 	} else
+diff -urNp a/cmd-confirm-before.c b/cmd-confirm-before.c
+--- a/cmd-confirm-before.c	2025-02-07 08:48:27.827337044 +0100
++++ b/cmd-confirm-before.c	2025-02-07 09:02:41.697587574 +0100
+@@ -76,8 +76,10 @@ cmd_confirm_before_exec(struct cmd *self
+ 
+ 	cdata = xcalloc(1, sizeof *cdata);
+ 	cdata->cmdlist = args_make_commands_now(self, item, 0, 1);
+-	if (cdata->cmdlist == NULL)
+-		return (CMD_RETURN_ERROR);
++	if (cdata->cmdlist == NULL) {
++	    free(cdata);
++    	return (CMD_RETURN_ERROR);
++    }
+ 
+ 	if (wait)
+ 		cdata->item = item;
+@@ -90,6 +92,7 @@ cmd_confirm_before_exec(struct cmd *self
+ 			cdata->confirm_key = confirm_key[0];
+ 		else {
+ 			cmdq_error(item, "invalid confirm key");
++            free(cdata);
+ 			return (CMD_RETURN_ERROR);
+ 		}
+ 	}
+diff -urNp a/cmd-display-menu.c b/cmd-display-menu.c
+--- a/cmd-display-menu.c	2025-02-07 08:48:27.827337044 +0100
++++ b/cmd-display-menu.c	2025-02-07 09:01:13.763081613 +0100
+@@ -367,6 +367,7 @@ cmd_display_menu_exec(struct cmd *self,
+ 		if (lines == -1) {
+ 			cmdq_error(item, "menu-border-lines %s", cause);
+ 			free(cause);
++            menu_free(menu);
+ 			return (CMD_RETURN_ERROR);
+ 		}
+ 	}
+diff -urNp a/cmd-parse.y b/cmd-parse.y
+--- a/cmd-parse.y	2025-02-07 08:48:27.828337039 +0100
++++ b/cmd-parse.y	2025-02-07 08:51:53.654226538 +0100
+@@ -778,6 +778,7 @@ cmd_parse_expand_alias(struct cmd_parse_
+ 	if (last == NULL) {
+ 		pr->status = CMD_PARSE_SUCCESS;
+ 		pr->cmdlist = cmd_list_new();
++        free(cmds);
+ 		return (1);
+ 	}
+ 
+diff -urNp a/file.c b/file.c
+--- a/file.c	2025-02-07 08:48:27.831337023 +0100
++++ b/file.c	2025-02-07 08:56:33.180657833 +0100
+@@ -392,6 +392,7 @@ file_read(struct client *c, const char *
+ 			size = fread(buffer, 1, sizeof buffer, f);
+ 			if (evbuffer_add(cf->buffer, buffer, size) != 0) {
+ 				cf->error = ENOMEM;
++                fclose(f);
+ 				goto done;
+ 			}
+ 			if (size != sizeof buffer)
+@@ -399,6 +400,7 @@ file_read(struct client *c, const char *
+ 		}
+ 		if (ferror(f)) {
+ 			cf->error = EIO;
++            fclose(f);
+ 			goto done;
+ 		}
+ 		fclose(f);
+diff -urNp a/format.c b/format.c
+--- a/format.c	2025-02-07 08:48:27.832337018 +0100
++++ b/format.c	2025-02-07 09:10:49.636626337 +0100
+@@ -4790,6 +4790,7 @@ fail:
+ 	free(sub);
+ 	format_free_modifiers(list, count);
+ 	free(copy0);
++    free(condition);
+ 	return (-1);
+ }
+ 
+diff -urNp a/status.c b/status.c
+--- a/status.c	2025-02-07 08:48:27.838336985 +0100
++++ b/status.c	2025-02-07 09:16:59.658542546 +0100
+@@ -1830,6 +1830,7 @@ status_prompt_complete_window_menu(struc
+ 	}
+ 	if (size == 0) {
+ 		menu_free(menu);
++        free(spm);
+ 		return (NULL);
+ 	}
+ 	if (size == 1) {
+@@ -1839,6 +1840,7 @@ status_prompt_complete_window_menu(struc
+ 			free(list[0]);
+ 		} else
+ 			tmp = list[0];
++        free(spm);
+ 		free(list);
+ 		return (tmp);
+ 	}
+diff -urNp a/window-customize.c b/window-customize.c
+--- a/window-customize.c	2025-02-07 08:48:27.839336980 +0100
++++ b/window-customize.c	2025-02-07 09:15:42.716956287 +0100
+@@ -739,8 +739,10 @@ window_customize_draw_option(struct wind
+ 		if (strcmp(expanded, value) != 0) {
+ 			if (!screen_write_text(ctx, cx, sx, sy - (s->cy - cy),
+ 			    0, &grid_default_cell, "This expands to: %s",
+-			    expanded))
++			    expanded)) {
++                free(expanded);
+ 				goto out;
++            }
+ 		}
+ 		free(expanded);
+ 	}
