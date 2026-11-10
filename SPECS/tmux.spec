@@ -2,7 +2,7 @@
 
 Name:           tmux
 Version:        3.2a
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        A terminal multiplexer
 
 # Most of the source is ISC licensed; some of the files in compat/ are 2 and
@@ -12,6 +12,8 @@ URL:            https://tmux.github.io/
 Source0:        https://github.com/tmux/%{name}/releases/download/%{version}/%{name}-%{version}.tar.gz
 # Examples has been removed - so include the bash_completion here
 Source1:        bash_completion_tmux.sh
+Source2:        tmux@.service
+
 Patch1:         0001-Fix-memory-leaks.patch
 Patch2:         0002-Close-file-stream-on-error.patch
 Patch3:         0003-Fix-memory-leak-with-time_format.patch
@@ -32,6 +34,7 @@ BuildRequires:  pkgconfig(tinfo)
 BuildRequires:  pkgconfig(ncurses)
 BuildRequires:  pkgconfig(ncursesw)
 BuildRequires:  libutempter-devel
+BuildRequires:  systemd-rpm-macros
 
 %description
 tmux is a "terminal multiplexer."  It enables a number of terminals (or
@@ -54,6 +57,7 @@ autoreconf -f -i -v
 %make_install
 # bash completion
 install -Dpm 644 %{SOURCE1} %{buildroot}%{_datadir}/bash-completion/completions/tmux
+install -Dpm 644 %{SOURCE2} %{buildroot}%{_unitdir}/tmux@.service
 
 %post
 if [ "$1" = 1 ]; then
@@ -80,8 +84,12 @@ fi
 %{_bindir}/tmux
 %{_mandir}/man1/tmux.1.*
 %{_datadir}/bash-completion/completions/tmux
+%{_unitdir}/tmux@.service
 
 %changelog
+* Wed Mar 04 2026 Josef Ridky <jridky@redhat.com> - 3.2a-6
+- Add tmux@.service (RHEL-72212)
+
 * Mon Apr 10 2023 Josh Boyer <jwboyer@redhat.com> - 3.2a-5
 - Backport a number of memory leak fixes
   Resolves: rhbz#1938885
