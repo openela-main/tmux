@@ -9,7 +9,7 @@ Name:           tmux
 
 Version:        3.3a
 # forge meta appends commit info
-Release:        13%{?dist}
+Release:        14%{?dist}
 Summary:        A terminal multiplexer
 
 License:        ISC AND BSD-2-Clause AND BSD-3-Clause AND SSH-short AND LicenseRef-Fedora-Public-Domain
@@ -25,6 +25,8 @@ Source2:        tmux@.service
 Patch0:         mitigate-character-length-crash.patch
 # Fix SAST findings (RHEL-45543)
 Patch1:         tmux-SAST-fix.patch
+# Fix capture pane crash (RHEL-80294)
+Patch2:         tmux-capture-pane.patch
 
 BuildRequires:  byacc
 BuildRequires:  gcc
@@ -49,6 +51,7 @@ as GNU Screen.
 %forgesetup
 %patch 0 -p0
 %patch 1 -p1
+%patch 2 -p1
 
 %build
 %if "%0{?commit}" != "0"
@@ -92,6 +95,9 @@ fi
 %{_unitdir}/tmux@.service
 
 %changelog
+* Wed Mar 04 2026 Josef Ridky <jridky@redhat.com> - 3.3a-14
+- Fix crash in capture pane (RHEL-80294)
+
 * Fri Feb 07 2025 Josef Ridky <jridky@redhat.com> - 3.3a-13
 - Add tmux@.service (RHEL-62152)
 

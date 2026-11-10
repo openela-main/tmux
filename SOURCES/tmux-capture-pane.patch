@@ -1,0 +1,15 @@
+diff -ruNp a/cmd-capture-pane.c b/cmd-capture-pane.c
+--- a/cmd-capture-pane.c	2026-03-04 11:20:09.564033709 +0100
++++ b/cmd-capture-pane.c	2026-03-04 11:20:38.453658716 +0100
+@@ -234,8 +234,9 @@ cmd_capture_pane_exec(struct cmd *self,
+ 			}
+ 			file_print_buffer(c, buf, len);
+ 			file_print(c, "\n");
+-			free(buf);
+-		}
++        }
++		free(buf);
++		buf = NULL;
+ 	} else {
+ 		bufname = NULL;
+ 		if (args_has(args, 'b'))
