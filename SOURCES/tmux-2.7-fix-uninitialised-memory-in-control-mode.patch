@@ -1,0 +1,49 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Josef Ridky <jridky@redhat.com>
+Date: Mon, 02 Nov 2026 00:00:00 +0100
+Subject: [PATCH] Fix uninitialised memory in client control mode
+
+In client_main(), the struct termios tio is used uninitialised.
+cfmakeraw() applies bitwise operations (&= / |=) to the existing
+field values, so garbage from the stack leaks through into c_lflag,
+c_cc[], and c_line. On Linux, where NOKERNINFO is not defined,
+c_lflag is never explicitly assigned, so it retains whatever bits
+cfmakeraw() left from the original garbage. A random c_line value
+can switch the pty line discipline, and random c_cc[] entries can
+alter how the kernel tty layer processes bytes, both of which can
+cause data loss on the SSH pty in control mode.
+
+Fix by copying saved_tio into tio before modifying it, so every
+field starts from a known-good state.
+
+Also in client_stdin_callback(), struct msg_stdin_data is not zeroed
+before use. When read() returns fewer bytes than sizeof data.data,
+the remainder is uninitialised stack memory which is then sent over
+the Unix socket via proc_send(). Fix by zeroing the struct before
+the read.
+---
+ client.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/client.c b/client.c
+index 1234567..abcdefg 100644
+--- a/client.c
++++ b/client.c
+@@ -315,6 +315,7 @@ client_main(struct event_base *base, int argc, char **argv, int flags)
+ 			    strerror(errno));
+ 			return (1);
+ 		}
++		memcpy(&tio, &saved_tio, sizeof tio);
+ 		cfmakeraw(&tio);
+ 		tio.c_iflag = ICRNL|IXANY;
+ 		tio.c_oflag = OPOST|ONLCR;
+@@ -438,6 +439,7 @@ client_stdin_callback(__unused int fd, __unused short events,
+ {
+ 	struct msg_stdin_data	data;
+
++	memset(&data, 0, sizeof data);
+ 	data.size = read(STDIN_FILENO, data.data, sizeof data.data);
+ 	if (data.size < 0 && (errno == EINTR || errno == EAGAIN))
+ 		return;
+--
+2.31.1

@@ -2,7 +2,7 @@
 
 Name:           tmux
 Version:        2.7
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        A terminal multiplexer
 
 Group:          Applications/System
@@ -14,6 +14,7 @@ Source0:        https://github.com/tmux/%{name}/releases/download/%{version}/%{n
 # Examples has been removed - so include the bash_completion here
 Source1:        bash_completion_tmux.sh
 Patch1:         0001-Increment-the-lines-counter-when-skipping-a-line-to-.patch
+Patch2:         tmux-2.7-fix-uninitialised-memory-in-control-mode.patch
 
 BuildRequires:  gcc
 BuildRequires:  ncurses-devel
@@ -65,6 +66,9 @@ fi
 %{_datadir}/bash-completion/completions/tmux
 
 %changelog
+* Mon Nov 02 2026 Josef Ridky <jridky@redhat.com> - 2.7-4
+- fix uninitialised memory in client control mode
+
 * Tue Apr 04 2023 Josh Boyer <jwboyer@redhat.com> - 2.7-3
 - Backport fix for intermittent stalling bug
   Resolves: rhbz 2024339
